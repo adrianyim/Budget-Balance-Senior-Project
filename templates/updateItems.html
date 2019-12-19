@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+Update
+{% endblock %}
+
+{% block header %}
+<label>Welcome {{user.first_name}}, </label>
+<label><a href="user/login">Logout</a></label>
+{% endblock %}
+
+{% block content %}
+<table class="table-insert">
+    <form method="POST" action="/home/updateItems/{{item.id}}">
+        {% csrf_token %}
+        <tr><td><input type="text" name="item" value="{{item.item}}"></td>
+            <td><select name="item_type">
+                    <option value="{{item.item_type}}">{{item.item_type}}</option>
+                    <option value="Salaries and wages">Salaries and wages</option>
+                    <option value="Utility expenses">Utility expenses</option>
+                    <option value="Administration expenses">Administration expenses</option>
+                    <option value="Finance costs">Finance costs</option>
+                    <option value="Depreciation">Depreciation</option>
+                    <option value="Impairment losses">Impairment losses</option>
+                    <option value="Food">Food</option>
+                    <option value="Others">Others</option>
+                </select>
+            </td>
+        </tr>
+        <tr><td><input type="text" name="cost" value="{{item.cost}}"></td>
+            <td><label>Cost Type:</label><br>
+                {% if item.cost_type == "Income" %}
+                <input type="radio" name="cost_type" value="Income" checked>Income
+                <input type="radio" name="cost_type" value="Expense">Expense</td></tr>
+                {% else %}
+                <input type="radio" name="cost_type" value="Income">Income
+                <input type="radio" name="cost_type" value="Expense" checked>Expense
+                {% endif %}
+            </td>
+        </tr>
+        <tr><td><textarea name="remark">{{item.remark}}</textarea></td>
+            <td><input type="date" name="date" placeholder="MM/DD/YYYY" value="{{item.date}}"></td>
+        </tr>
+        <tr><td colspan="2"><input type="submit" value="Update"></td></tr>
+    </form>      
+    </table>
+
+{% endblock %}

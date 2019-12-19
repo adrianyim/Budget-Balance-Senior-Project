@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block header %}
+<label>Welcome {{user.first_name}}, </label>
+<label><a href="/user/logout">Logout</a></label>
+{% endblock %}
+
+{% block content %}
+<table class="table-insert">
+    <form method="POST" action="insertItems">
+        {% csrf_token %}
+        <tr><td><input type="text" name="item" placeholder="Item"></td><td>
+        <select name="item_type">
+        <option value="empty">--Item Type--</option>
+        <option value="Salaries and wages">Salaries and wages</option>
+        <option value="Utility expenses">Utility expenses</option>
+        <option value="Administration expenses">Administration expenses</option>
+        <option value="Finance costs">Finance costs</option>
+        <option value="Depreciation">Depreciation</option>
+        <option value="Impairment losses">Impairment losses</option>
+        <option value="Food">Food</option>
+        <option value="Others">Others</option>
+        </select></td></tr>
+        <tr><td><input type="text" name="cost" placeholder="Cost"></td>
+        <td><label>Cost Type:</label><br><input type="radio" name="cost_type" value="Income">Income
+        <input type="radio" name="cost_type" value="Expense">Expense</td></tr>
+        <tr><td><textarea name="remark" placeholder="remark"></textarea></td></tr>
+        <tr><td colspan="2"><input type="submit" value="Submit"></td></tr>
+    </form>      
+    </table>
+    <div>
+        <table>
+            <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
+            {% for item in items %}
+            <tr>
+                <td>{{item.item}}</td>
+                <td>{{item.item_type}}</td>
+                <td>{{item.cost}}</td>
+                <td>{{item.cost_type}}</td>
+                <td>{{item.remark}}</td>
+                <td>{{item.date}}</td>
+                <td><button onclick="window.location.href='updateItems/{{item.id}}';">Update</button></td>
+                <td><button onclick="window.location.href='deleteItems/{{item.id}}';">Delete</button></td>
+            </tr>
+            {% endfor %}
+            <tr><td>Total</td><td colspan="2">${{total}}</td></tr>
+        </table>
+    </div>
+    <div>
+        {% for i, predict in prediction.itertuples %}
+        {{predict.index}} -> {{predict.cost}}
+
+        {% endfor %}
+    </div>
+{% endblock %}
