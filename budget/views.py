@@ -9,7 +9,7 @@ import datetime
 from sqlalchemy import create_engine
 
 from .models import Item
-from . import connectpsql
+# from . import connectpsql
 
 import pandas as pd
 import numpy as np
