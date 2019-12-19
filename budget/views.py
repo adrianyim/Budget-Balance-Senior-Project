@@ -10,7 +10,6 @@ from sqlalchemy import create_engine
 
 from .models import Item
 from . import connectpsql
-# from .env import env
 
 import pandas as pd
 import numpy as np
