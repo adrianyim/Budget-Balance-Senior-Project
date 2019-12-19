@@ -1,2 +1,3 @@
 connectpsql.py
 settings.py
+.env
