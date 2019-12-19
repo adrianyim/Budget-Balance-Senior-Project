@@ -172,7 +172,7 @@ def processingDataset(dataset):
 
 def predict():
     # Connect to psql server
-    engine = create_engine(connectpsql.psql)
+    engine = create_engine(process.env.psql)
     sql_command = "SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date"
 
     # Read dataset from psql server
