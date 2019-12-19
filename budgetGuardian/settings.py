@@ -14,7 +14,7 @@ import os
 import django_heroku
 
 # Activate Django-Heroku.
-django_heroku.settings(locals())
+# django_heroku.settings(locals())
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -88,6 +88,16 @@ DATABASES = {
         'HOST': 'localhost'
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'd2mn9q2264h8tc',
+#         'USER': 'qeojpixrqqtmud',
+#         'PASSWORD': 'a2fa0478a20e0647f640354c19807b4f47618d25247f1b728629d40c1efc7d1c',
+#         'HOST': 'ec2-174-129-255-57.compute-1.amazonaws.com'
+#     }
+# }
 
 
 # Password validation

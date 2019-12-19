@@ -9,7 +9,8 @@ import datetime
 from sqlalchemy import create_engine
 
 from .models import Item
-# from . import connectpsql
+from . import connectpsql
+# from .env import env
 
 import pandas as pd
 import numpy as np
@@ -172,7 +173,7 @@ def processingDataset(dataset):
 
 def predict():
     # Connect to psql server
-    engine = create_engine(env.psql)
+    engine = create_engine(connectpsql.psql)
     sql_command = "SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date"
 
     # Read dataset from psql server
