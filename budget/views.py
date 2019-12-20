@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
+from django.db.models import Sum, Q, F
 
 import datetime
 
@@ -31,6 +31,8 @@ from TFANN import ANNR
 from pandas.plotting import autocorrelation_plot
 
 import matplotlib.pyplot as plt
+
+from flask import Flask, render_template
 
 # Point to CustomUser table
 User = get_user_model()
@@ -228,7 +230,7 @@ def predict():
     # plt.show()
     
     days_in_month = 31      # Comparing past days
-    prediction_days = 31    # Predicting days
+    prediction_days = 7    # Predicting days
 
     diff_list = difference(dfDay, days_in_month)
     model = ARIMA(diff_list, order=(5, 0, 1))
@@ -249,8 +251,10 @@ def predict():
 
     dfDays, dfPredict = processPrediction(dfDay, history, prediction_days)
 
-    return dfPredict.to_html()
+    predict_html = dfPredict.to_html(header=False, index_names=False, border=0, classes="predictTable")
+    # return render_template("prediction.html", tables=[dfPredict.to_html(classes="predic_table")])
 
+    return predict_html
 
 def deleteItems(request, id):
     Item.objects.filter(id = id).delete()
@@ -301,20 +305,32 @@ def insertItems(request):
 
 def home(request):
     if request.user.is_authenticated:
-        items = Item.objects.filter(username = request.user) # order by date
-        total = calculateCostToTal(request)
-        prediction = predict()
+        items = Item.objects.filter(username = request.user).order_by("-date") # order by date
+        expense = calculateExpenseToTal(request)
+        income = calculateIncomeToTal(request)
+        predict_list = predict()
 
         return render(request, "home.html", {
             "items": items, 
-            "total": total
+            "expense": expense,
+            "income": income,
+            "predict_list": predict_list
             })
     else:
         return redirect("/user/login")
 
-def calculateCostToTal(request):
-    total = Item.objects.filter(username = request.user).aggregate(total_sum=Sum("cost"))["total_sum"]
+def calculateExpenseToTal(request):
+    username = Q(username=request.user)
+    costtype = Q(cost_type="Expense")
+    expense = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
 
-    return total
+    return expense
+
+def calculateIncomeToTal(request):
+    username = Q(username=request.user)
+    costtype = Q(cost_type="Income")
+    income = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+
+    return income
 
 # pg_ctl.exe start -D C:\Users\adrian\Apps\PostgreSQL\data

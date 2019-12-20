@@ -10,11 +10,11 @@ Home
 {% endblock %}
 
 {% block content %}
-<table class="table-insert">
+<table class="container">
     <form method="POST" action="insertItems">
         {% csrf_token %}
-        <tr><td><input type="text" name="item" placeholder="Item"></td><td>
-        <select name="item_type">
+        <tr><td><input type="text" name="item" placeholder="Item" required></td><td>
+        <select name="item_type" required>
         <option value="empty">--Item Type--</option>
         <option value="Salaries and wages">Salaries and wages</option>
         <option value="Utility expenses">Utility expenses</option>
@@ -25,15 +25,16 @@ Home
         <option value="Food">Food</option>
         <option value="Others">Others</option>
         </select></td></tr>
-        <tr><td><input type="text" name="cost" placeholder="Cost"></td>
-        <td><label>Cost Type:</label><br><input type="radio" name="cost_type" value="Income">Income
+        <tr><td><input type="text" name="cost" placeholder="Cost" required></td>
+        <td><label>Cost Type:</label><br><input type="radio" name="cost_type" value="Income" required>Income
         <input type="radio" name="cost_type" value="Expense">Expense</td></tr>
-        <tr><td><textarea name="remark" placeholder="remark"></textarea></td></tr>
-        <tr><td colspan="2"><input type="submit" value="Submit"></td></tr>
+        <tr><td colspan="2"><textarea name="remark" placeholder="remark"></textarea></td></tr>
+        <tr><td colspan="2"><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
     </form>      
     </table>
-    <div>
+    <div class="container">
         <table>
+            <tr><td colspan="2">Total income: $ {{income}}</td><td colspan="3">Total expense: $ {{expense}}</td></tr>
             <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
             {% for item in items %}
             <tr>
@@ -43,17 +44,50 @@ Home
                 <td>{{item.cost_type}}</td>
                 <td>{{item.remark}}</td>
                 <td>{{item.date}}</td>
-                <td><button onclick="window.location.href='updateItems/{{item.id}}';">Update</button></td>
-                <td><button onclick="window.location.href='deleteItems/{{item.id}}';">Delete</button></td>
+                <td><a href="updateItems/{{item.id}}"><button type="button" class="btn btn-primary btn-sm">Update</button></a></td>
+                <td><a href="deleteItems/{{item.id}}"><button type="button" class="btn btn-outline-danger btn-sm">Delete</button></a></td>
             </tr>
             {% endfor %}
-            <tr><td>Total</td><td colspan="2">${{total}}</td></tr>
         </table>
     </div>
-    <div>
-        {% for i, predict in prediction.itertuples %}
-        {{predict.index}} -> {{predict.cost}}
 
-        {% endfor %}
+    <div class="container">
+        <br/><br/><br/>
+        <div class="row justify-content-md-center">
+            <div class="col">
+            </div>
+            <div class="col">
+                <p>How many days you want to predict?</p>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col">
+            </div>
+            <div class="col">
+                <form action="prediction" method="POST">
+                    {% csrf_token %}
+                    <input type="number" id="day" placeholder="days">
+                    <button type="submit" class="btn btn-warning btn-sm">Predict</button>
+                </form>
+            </div>
+            <div class="col">
+            </div>
+        </div>
     </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+                {% autoescape off %}
+                {{predict_list}}
+                {% endautoescape %}
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+
 {% endblock %}

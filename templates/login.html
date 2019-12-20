@@ -5,17 +5,24 @@ Login
 {% endblock %}
 
 {% block content %}
-<div>
-    <div>
+<div class="container">
+    <div class="row justify-content-md-center">
+        <br/><br/><br/><br/>
+        <h3>Budget Guardian</h3>
+        <br/><br/><br/><br/><br/><br/><br/><br/>
+    </div>
+    <div class="row justify-content-md-center">
         {% for message in messages %}
         <p>{{message}}</p>
         {% endfor %}
     </div>
-    <form method="POST" action="login">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="User Name"><br><br>
-        <input type="password" name="password" placeholder="Password"><br><br>
-        <input type="submit" value="Login">
-    </form>
+    <div class="row justify-content-md-center">
+        <form method="POST" action="login">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="User Name"><br><br>
+            <input type="password" name="password" placeholder="Password"><br><br>
+            <button type="submit" class="btn btn-info btn-sm">Login</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

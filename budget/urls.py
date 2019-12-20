@@ -7,4 +7,5 @@ urlpatterns = [
     path("insertItems", views.insertItems, name="insertItems"),
     path("updateItems/<id>", views.updateItems, name="updateItems"),
     path("deleteItems/<id>", views.deleteItems, name="deleteItems")
+    # path("prediction", views.predict, name="prediction")
 ]
