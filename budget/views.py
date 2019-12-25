@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, F
+from django.contrib import messages
 
 import datetime
 
@@ -111,6 +112,7 @@ def processPrediction(dfDay, history, prediction_days):
     return dfDays, dfPredict
 
 def inverse_diffference(history, predict, interval=1):
+    # print(predict, " + ", history[-interval])
     return predict + history[-interval]
 
 def difference(df, interval=1):
@@ -118,6 +120,8 @@ def difference(df, interval=1):
 
     for i in range(interval, len(df)):
         value = df[i] - df[i - interval]
+        # print("i = ", i, " i - interval = ", (i -interval))
+        # print(df[i], " - ", df[i - interval], " = ", value)
         diff_list.append(value)
 
     return array(diff_list)
@@ -172,7 +176,7 @@ def processingDataset(dataset):
 
     return expensesList, round(dfDay, 2)
 
-def predict():
+def predict(days):
     # Connect to psql server
     engine = create_engine(connectpsql.psql)
     sql_command = "SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date"
@@ -229,18 +233,19 @@ def predict():
     # plt.plot(predictions_list, label="forecast", color="red")
     # plt.show()
     
-    days_in_month = 31      # Comparing past days
-    prediction_days = 7    # Predicting days
+    days_in_month = 31      # Comparing x days difference
+    prediction_days = 14    # Predicting days
 
     diff_list = difference(dfDay, days_in_month)
-    model = ARIMA(diff_list, order=(5, 0, 1))
+    model = ARIMA(diff_list, order=(8, 0, 1))
     model_fit = model.fit(disp=0)
     # start_index = len(diff_list)
     # end_index = start_index + 29
     # forecast = model_fit.predict(start=start_index, end=end_index)
-    forecast = model_fit.forecast(steps=prediction_days)[0]
+    forecast = model_fit.forecast(steps=days)[0]
     # forecast = inverse_diffference(dfDay, forecast, days_in_month)
     # print("Forecast: %f" % forecast)
+    # print(model_fit.forecast(steps=days))
     history = [x for x in dfDay]
 
     for predict in forecast:
@@ -249,12 +254,13 @@ def predict():
             inverted = 0.0
         history.append(round(inverted, 2))
 
-    dfDays, dfPredict = processPrediction(dfDay, history, prediction_days)
+    dfDays, dfPredict = processPrediction(dfDay, history, days)
 
+    # convert to html form
     predict_html = dfPredict.to_html(header=False, index_names=False, border=0, classes="predictTable")
-    # return render_template("prediction.html", tables=[dfPredict.to_html(classes="predic_table")])
 
     return predict_html
+    # return render(request, "home.html", {"predict_list": predict_html})
 
 def deleteItems(request, id):
     Item.objects.filter(id = id).delete()
@@ -308,7 +314,22 @@ def home(request):
         items = Item.objects.filter(username = request.user).order_by("-date") # order by date
         expense = calculateExpenseToTal(request)
         income = calculateIncomeToTal(request)
-        predict_list = predict()
+        predict_list = ""
+
+        # prediction post request form
+        if request.POST:
+            days = request.POST["days"]
+
+            # error check
+            if days == "":
+                predict_list = ""
+            else:
+                days = int(days)
+                if days <= 0:
+                    messages.info(request, "Prediction day is not correct!")
+                    return redirect("/home/")
+                else:
+                    predict_list = predict(days)
 
         return render(request, "home.html", {
             "items": items, 

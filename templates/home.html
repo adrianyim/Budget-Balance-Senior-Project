@@ -30,11 +30,53 @@ Home
         <input type="radio" name="cost_type" value="Expense">Expense</td></tr>
         <tr><td colspan="2"><textarea name="remark" placeholder="remark"></textarea></td></tr>
         <tr><td colspan="2"><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
+        <tr><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td></tr>
     </form>      
     </table>
     <div class="container">
+        <br/><br/>
+        <div class="row justify-content-md-center">
+            <div class="col">
+            </div>
+            <div class="col">
+                <p>How many days you want to predict?</p>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col">
+            </div>
+            <div class="col">
+                <form action="/home/" method="POST" id="days_form">
+                    {% csrf_token %}
+                    <input type="number" name="days" placeholder="days">
+                    <button type="submit" class="btn btn-warning btn-sm">Predict</button>
+                </form>
+            </div>
+            <div class="col">
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+                {% for message in messages %}
+                <p>{{message}}</p>
+                {% endfor %}
+                {% autoescape off %}
+                {{predict_list}}
+                {% endautoescape %}
+            </div>
+            <div class="col">
+            </div>
+        </div>
+        <br/><br/>
+    </div>
+    <div class="container">
         <table>
-            <tr><td colspan="2">Total income: $ {{income}}</td><td colspan="3">Total expense: $ {{expense}}</td></tr>
             <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
             {% for item in items %}
             <tr>
@@ -49,45 +91,6 @@ Home
             </tr>
             {% endfor %}
         </table>
-    </div>
-
-    <div class="container">
-        <br/><br/><br/>
-        <div class="row justify-content-md-center">
-            <div class="col">
-            </div>
-            <div class="col">
-                <p>How many days you want to predict?</p>
-            </div>
-            <div class="col">
-            </div>
-        </div>
-        <div class="row justify-content-md-center">
-            <div class="col">
-            </div>
-            <div class="col">
-                <form action="prediction" method="POST">
-                    {% csrf_token %}
-                    <input type="number" id="day" placeholder="days">
-                    <button type="submit" class="btn btn-warning btn-sm">Predict</button>
-                </form>
-            </div>
-            <div class="col">
-            </div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="row">
-            <div class="col">
-            </div>
-            <div class="col">
-                {% autoescape off %}
-                {{predict_list}}
-                {% endautoescape %}
-            </div>
-            <div class="col">
-            </div>
-        </div>
     </div>
 
 {% endblock %}
