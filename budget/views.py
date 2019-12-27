@@ -140,7 +140,7 @@ def convertToNum(df):
 
     return df
 
-def processingDataset(dataset):
+def processingDataset(dataset, predict_type):
     pd.set_option('display.max_rows', None)
 
     # Create a DataFrame
@@ -158,25 +158,32 @@ def processingDataset(dataset):
     df = convertToNum(df)
 
     # Filter costType
-    expensesList = df[df.costType==1]
-    expensesList = expensesList.drop(columns="costType")
+    if predict_type == "income":
+        incomeList = df[df.costType==0]
+        incomeList = incomeList.drop(columns="costType")
+        ## Daily total
+        dfDay = incomeList.cost.resample('D').sum()
+        return round(dfDay, 2)
+    else:
+        expensesList = df[df.costType==1]
+        expensesList = expensesList.drop(columns="costType")
+        ## Daily total
+        dfDay = expensesList.cost.resample('D').sum()
+        return round(dfDay, 2)
 
-    # Sort by date, item type, and cost type
-    dfGroup = expensesList.groupby(["date", "itemType"]).sum()
-    # Daily total
-    dfDay = expensesList.cost.resample('D').sum()
-    # Weekly total
-    dfWeek = expensesList.cost.resample('W').sum()
-    # Monthly total
-    dfMonth = expensesList.cost.resample('M').sum()
+    ## Sort by date, item type, and cost type
+    # dfGroup = expensesList.groupby(["date", "itemType"]).sum()
+
+    ## Weekly total
+    # dfWeek = expensesList.cost.resample('W').sum()
+    ## Monthly total
+    # dfMonth = expensesList.cost.resample('M').sum()
 
     # dfWeekDay = pd.merge(dfWeek, dfDay, how="outer", on="date", sort=True, suffixes=("_week", "_day"))
     # dfMonth = pd.merge(dfMonth, dfWeekDay, how="outer", on="date", sort=True)
     # dfMonth = dfMonth.replace(to_replace=np.nan, value=-1)
 
-    return expensesList, round(dfDay, 2)
-
-def predict(days):
+def predict(days, predict_type):
     # Connect to psql server
     engine = create_engine(connectpsql.psql)
     sql_command = "SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date"
@@ -184,7 +191,7 @@ def predict(days):
     # Read dataset from psql server
     dataset = pd.read_sql(sql_command, engine, parse_dates=["date"])
     
-    expensesList, dfDay = processingDataset(dataset)
+    dfDay = processingDataset(dataset, predict_type)
 
     # autocorrelation_plot(expensesList)
     # plt.show()
@@ -328,8 +335,9 @@ def home(request):
                 if days <= 0:
                     messages.info(request, "Prediction day is not correct!")
                     return redirect("/home/")
-                else:
-                    predict_list = predict(days)
+                else:                      
+                    predict_type = request.POST["predict_type"]
+                    predict_list = predict(days, predict_type)
 
         return render(request, "home.html", {
             "items": items, 

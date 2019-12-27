@@ -5,24 +5,16 @@ Login
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-md-center">
-        <br/><br/><br/><br/>
-        <h3>Budget Guardian</h3>
-        <br/><br/><br/><br/><br/><br/><br/><br/>
-    </div>
-    <div class="row justify-content-md-center">
-        {% for message in messages %}
-        <p>{{message}}</p>
-        {% endfor %}
-    </div>
-    <div class="row justify-content-md-center">
+<div class="row justify-content-md-center">
+    <table style="text-align:center" class="table table-borderless">
+        <tr><th><h3>Budget Guardian</h3></th></tr>
+        <tr><td>{% for message in messages %}{{message}}{% endfor %}</td></tr>
         <form method="POST" action="login">
             {% csrf_token %}
-            <input type="text" name="username" placeholder="User Name"><br><br>
-            <input type="password" name="password" placeholder="Password"><br><br>
-            <button type="submit" class="btn btn-info btn-sm">Login</button>
-        </form>
-    </div>
+            <tr><td><input type="text" name="username" placeholder="User Name"></td></tr>
+            <tr><td><input type="password" name="password" placeholder="Password"></td></tr>
+            <tr><td><button type="submit" class="btn btn-info btn-sm">Login</button></td></tr>
+            <tr><td><a href="register"><button type="button" class="btn btn-warning btn-sm">Register</button></a></td></tr>
+    </table>
 </div>
 {% endblock %}

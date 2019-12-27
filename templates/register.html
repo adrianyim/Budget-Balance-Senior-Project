@@ -5,24 +5,20 @@ Register
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col">
-            {% for message in messages %}
-            <p>{{message}}</p>
-            {% endfor %}
-        </div>
-        <div class="col">
-            <form method="POST" action="register">
-                {% csrf_token %}
-                <input type="text" name="first_name" placeholder="First Name" required><br><br>
-                <input type="text" name="last_name" placeholder="Last Name" required><br><br>
-                <input type="text" name="username" placeholder="User Name" required><br><br>
-                <input type="password" name="password" placeholder="Password" required><br><br>
-                <input type="password" name="repassword" placeholder="Re-Password" required><br><br>
-                <input type="submit" value="Create User">
-            </form>
-        </div>
-    </div>
+<div class="row justify-content-md-center">
+    <table style="text-align:center" class="table table-borderless">
+        <tr><th><h3>Create your own account</h3></th></tr>
+        <tr><td>{% for message in messages %}{{message}}{% endfor %}</td></tr>
+        <form method="POST" action="register">
+            {% csrf_token %}
+            <tr><td><input type="text" name="first_name" placeholder="First Name" required></td></tr>
+            <tr><td><input type="text" name="last_name" placeholder="Last Name" required></td></tr>
+            <tr><td><input type="text" name="username" placeholder="User Name" required></td></tr>
+            <tr><td><input type="password" name="password" placeholder="Password" required></td></tr>
+            <tr><td><input type="password" name="repassword" placeholder="Re-Password" required></td></tr>
+            <tr><td><button type="submit" class="btn btn-warning btn-sm">Register</button></td></tr>
+            <tr><td><a href="/user/login"><button type="button" class="btn btn-outline-secondary btn-sm">Back</button></a></td></tr>
+        </form>
+    </table>
 </div>
 {% endblock %}
