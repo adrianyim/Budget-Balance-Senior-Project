@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, F
 from django.contrib import messages
 
-import datetime
+import datetime 
 
 from sqlalchemy import create_engine
 
@@ -88,6 +88,22 @@ class NeuronNetwork(object):
 
             self.synaptic_weights += adjustment
 
+def insertZero(costList):
+    ## Daily total
+    dfDay = costList.cost.resample('D').sum()
+
+    today = datetime.datetime.today() #yyyy-mm-dd
+    last_date = dfDay.iloc[[-1]].index # Find the last date of dfDay
+    
+    while last_date < today - datetime.timedelta(days=1):
+        last_date += datetime.timedelta(days=1) # Add 1 day
+        new_row = pd.Series(data={" ": 0}, index=last_date) # Create a new row
+        dfDay = dfDay.append(new_row, ignore_index=False) # Insert into dfDay
+
+    dfDay = dfDay.replace(to_replace=np.nan, value=0)
+
+    return round(dfDay, 2)
+
 def processPrediction(dfDay, history, prediction_days):
     last_date = dfDay.iloc[[-1]].index + datetime.timedelta(days=1)
 
@@ -157,19 +173,24 @@ def processingDataset(dataset, predict_type):
     # Convert string to num
     df = convertToNum(df)
 
+    # today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    # dfDay.index[-1] #yyyy-mm-dd hh:mm:ss
+
     # Filter costType
     if predict_type == "income":
         incomeList = df[df.costType==0]
-        incomeList = incomeList.drop(columns="costType")
-        ## Daily total
-        dfDay = incomeList.cost.resample('D').sum()
-        return round(dfDay, 2)
+        # incomeList = incomeList.drop(columns="costType")
+        
+        dfDay = insertZero(incomeList)
+
+        return dfDay
     else:
         expensesList = df[df.costType==1]
-        expensesList = expensesList.drop(columns="costType")
-        ## Daily total
-        dfDay = expensesList.cost.resample('D').sum()
-        return round(dfDay, 2)
+        # expensesList = expensesList.drop(columns="costType")
+        
+        dfDay = insertZero(expensesList)
+
+        return dfDay
 
     ## Sort by date, item type, and cost type
     # dfGroup = expensesList.groupby(["date", "itemType"]).sum()
