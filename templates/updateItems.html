@@ -13,7 +13,8 @@ Update
 <table class="container">
     <form method="POST" action="/home/updateItems/{{item.id}}" >
         {% csrf_token %}
-        <tr><td><input type="text" name="item" value="{{item.item}}" class="form-control"></td>
+        {{updateForm}}
+        <!-- <tr><td><input type="text" name="item" value="{{item.item}}" class="form-control"></td>
             <td><select name="item_type" class="form-control">
                     <option value="{{item.item_type}}">{{item.item_type}}</option>
                     <option value="Salaries and wages">Salaries and wages</option>
@@ -39,8 +40,8 @@ Update
             </td>
         </tr>
         <tr><td><textarea name="remark">{{item.remark}}</textarea></td>
-            <td><input type="date" name="date" placeholder="MM/DD/YYYY" value="{{item.date}}"></td>
-        </tr>
+            <td><input type="date" name="date" value="{{item.date}}"></td>
+        </tr> -->
         <tr><td colspan="2"><button type="submit" class="btn btn-outline-info btn-sm">Update</button></td></tr>
     </form>    
     <td><a href="/home/"><button type="button" class="btn btn-outline-secondary btn-sm">Back</button></a></td> 

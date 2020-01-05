@@ -4,14 +4,11 @@ from django.contrib.auth.models import User, auth
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, F
 from django.contrib import messages
-
 import datetime 
-
 from sqlalchemy import create_engine
-
+from .forms import ItemForm, DayFrom
 from .models import Item
 from . import connectpsql
-
 import pandas as pd
 import numpy as np
 from numpy import exp, array, random, dot
@@ -19,7 +16,6 @@ from sklearn.preprocessing import MinMaxScaler, scale
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 from keras import models
@@ -28,12 +24,11 @@ from statsmodels.tsa.vector_ar.var_model import VAR
 from statsmodels.graphics.tsaplots import plot_pacf
 from pmdarima.arima.utils import ndiffs
 from TFANN import ANNR
-
 from pandas.plotting import autocorrelation_plot
-
 import matplotlib.pyplot as plt
-
 from flask import Flask, render_template
+
+# app = Flask(__name__)
 
 # Point to CustomUser table
 User = get_user_model()
@@ -184,10 +179,10 @@ def processingDataset(dataset, predict_type):
         dfDay = insertZero(incomeList)
 
         return dfDay
-    else:
+    elif predict_type == "expense":
         expensesList = df[df.costType==1]
         # expensesList = expensesList.drop(columns="costType")
-        
+
         dfDay = insertZero(expensesList)
 
         return dfDay
@@ -260,13 +255,15 @@ def predict(days, predict_type):
     # plt.plot(test, label="Actuals")
     # plt.plot(predictions_list, label="forecast", color="red")
     # plt.show()
-    
+
     days_in_month = 31      # Comparing x days difference
     prediction_days = 14    # Predicting days
 
     diff_list = difference(dfDay, days_in_month)
+
     model = ARIMA(diff_list, order=(8, 0, 1))
     model_fit = model.fit(disp=0)
+
     # start_index = len(diff_list)
     # end_index = start_index + 29
     # forecast = model_fit.predict(start=start_index, end=end_index)
@@ -292,95 +289,116 @@ def predict(days, predict_type):
 
 def deleteItems(request, id):
     Item.objects.filter(id = id).delete()
-    return redirect("home")
+    return redirect("/home/")
 
 def updateItems(request, id):
-    if request.POST:
-        item = request.POST["item"]
-        item_type = request.POST["item_type"]
-        cost = request.POST["cost"]
-        cost_type = request.POST["cost_type"]
-        remark = request.POST["remark"]
-        date = request.POST["date"]
+    item = Item.objects.get(id=id)
 
-        Item.objects.filter(id = id).update(
-            item = item, 
-            item_type = item_type, 
-            cost = cost, 
-            cost_type = cost_type, 
-            remark = remark,
-            date = date)
+    if request.method == "POST":
+        updateForm = ItemForm(request.POST, instance=item)
+        if updateForm.is_valid():
+            itemDB = updateForm.save(commit=False)
+            itemDB.save()
 
-        return redirect("home")
+        return redirect("/home/")
     else:
-        item = get_object_or_404(Item, id=id)
+        updateForm = ItemForm(instance=item)
 
-        return render(request, "updateItems.html", {
-            "item":item
+    return render(request, "updateItems.html", {
+            "item":item,
+            "updateForm":updateForm
         })
 
+
+    # if request.method == "POST":
+    #     item = request.POST["item"]
+    #     item_type = request.POST["item_type"]
+    #     cost = request.POST["cost"]
+    #     cost_type = request.POST["cost_type"]
+    #     remark = request.POST["remark"]
+    #     date = request.POST["date"]
+
+    #     Item.objects.filter(id = id).update(
+    #         item = item, 
+    #         item_type = item_type, 
+    #         cost = cost, 
+    #         cost_type = cost_type, 
+    #         remark = remark,
+    #         date = date)
+
+    #     return redirect("home")
+    # else:
+    #     item = get_object_or_404(Item, id=id)
+
+    #     return render(request, "updateItems.html", {
+    #         "item":item
+    #     })
+
 def insertItems(request):
-    item = request.POST["item"]
-    item_type = request.POST["item_type"]
-    cost = request.POST["cost"]
-    cost_type = request.POST["cost_type"]
-    remark = request.POST["remark"]
+    if request.method == "POST":
+        insertForm = ItemForm(request.POST)
+        if insertForm.is_valid():
+            item = insertForm.cleaned_data["item"]
+            item_type = insertForm.cleaned_data["item_type"]
+            cost = insertForm.cleaned_data["cost"]
+            cost_type = insertForm.cleaned_data["cost_type"]
+            remark = insertForm.cleaned_data["remark"]
+            date = insertForm.cleaned_data["date"]
 
-    itemDB = Item(
-        item = item, 
-        item_type = item_type, 
-        cost = cost, 
-        cost_type = cost_type, 
-        remark = remark,
-        username = User.objects.get(username = request.user))
-    itemDB.save()
+            itemDB = Item(
+                item = item, 
+                item_type = item_type, 
+                cost = cost, 
+                cost_type = cost_type, 
+                remark = remark,
+                date = date,
+                username = User.objects.get(username = request.user))
 
-    return redirect("home")
+            itemDB.save()
+
+    return redirect("/home/")
+
+def calculateToTal(request):
+    username = Q(username=request.user)
+
+    costtype = Q(cost_type="Expense")
+    expense = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+    
+    costtype = Q(cost_type="Income")
+    income = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+
+    return income, expense
 
 def home(request):
     if request.user.is_authenticated:
         items = Item.objects.filter(username = request.user).order_by("-date") # order by date
-        expense = calculateExpenseToTal(request)
-        income = calculateIncomeToTal(request)
+        itemForm = ItemForm()
+        dayForm = DayFrom()
+        
+        income, expense = calculateToTal(request)
         predict_list = ""
 
         # prediction post request form
-        if request.POST:
-            days = request.POST["days"]
-
-            # error check
-            if days == "":
-                predict_list = ""
-            else:
-                days = int(days)
-                if days <= 0:
-                    messages.info(request, "Prediction day is not correct!")
+        if request.method == "POST":
+            form = DayFrom(request.POST)
+            if form.is_valid():
+                predict_type = form.cleaned_data["predict_type"]
+                days = form.cleaned_data["days"]
+                
+                if days == 0:
                     return redirect("/home/")
-                else:                      
-                    predict_type = request.POST["predict_type"]
+                else:
                     predict_list = predict(days, predict_type)
 
         return render(request, "home.html", {
             "items": items, 
             "expense": expense,
             "income": income,
-            "predict_list": predict_list
+            "predict_list": predict_list,
+            "item_form": itemForm,
+            "day_form": dayForm
             })
     else:
-        return redirect("/user/login")
-
-def calculateExpenseToTal(request):
-    username = Q(username=request.user)
-    costtype = Q(cost_type="Expense")
-    expense = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
-
-    return expense
-
-def calculateIncomeToTal(request):
-    username = Q(username=request.user)
-    costtype = Q(cost_type="Income")
-    income = Item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
-
-    return income
+        return redirect("/user/login/")
 
 # pg_ctl.exe start -D C:\Users\adrian\Apps\PostgreSQL\data

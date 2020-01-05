@@ -16,33 +16,16 @@ Home
     <table style="text-align:center" class="table table-borderless">
         <form method="POST" action="insertItems">
             {% csrf_token %}
-            <tr><td colspan="3"></td><td><input type="text" name="item" placeholder="Item" required><td><select name="item_type" required>
-            <option value="empty">--Item Type--</option>
-            <option value="Salaries and wages">Salaries and wages</option>
-            <option value="Utility expenses">Utility expenses</option>
-            <option value="Administration expenses">Administration expenses</option>
-            <option value="Finance costs">Finance costs</option>
-            <option value="Depreciation">Depreciation</option>
-            <option value="Impairment losses">Impairment losses</option>
-            <option value="Food">Food</option>
-            <option value="Others">Others</option>
-            </select></td><td colspan="3"></td></tr>
-            <tr><td colspan="3"></td><td><input type="text" name="cost" placeholder="Cost" required></td>
-            <td>Cost Type: <input type="radio" name="cost_type" value="Income" required> Income 
-            <input type="radio" name="cost_type" value="Expense"> Expense </td><td colspan="3"></td></tr>
-            <tr><td colspan="3"></td><td><textarea name="remark" placeholder="remark"></textarea></td>
-                <td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td><td colspan="3"></td></tr>
+            {{item_form}}
+            <tr><td></td><td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
         </form>
-            <tr><td colspan="3"></td><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td><td colspan="3"></td></tr>
-            <tr><td colspan="8">How many days you want to predict?</td></tr>
-        <form action="/home/" method="POST" id="days_form">
+            <tr><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td></tr>
+            <tr><td colspan="2">How many days do you want to predict?</td></tr>
+        <form action="/home/" method="POST">
             {% csrf_token %}
-            <tr><td colspan="8">Predicting Type: <input type="radio" name="predict_type" value="income"> Income 
-                <input type="radio" name="predict_type" value="expense"> Expense <input type="number" name="days" placeholder="days">
-                <button type="submit" class="btn btn-warning btn-sm">Predict</button></td></tr>
+            {{day_form}}
+            <tr><td></td><td><button type="submit" class="btn btn-warning btn-sm">Predict</button></td></tr>
         </form>
-            <!-- <tr><td colspan="8">{% for message in messages %}{{message}}{% endfor %}</td></tr>
-            <tr><td colspan="8">{% autoescape off %}{{predict_list}}{% endautoescape %}</td></tr> -->
     </table>
     {% for message in messages %}{{message}}{% endfor %}
     {% autoescape off %}{{predict_list}}{% endautoescape %}

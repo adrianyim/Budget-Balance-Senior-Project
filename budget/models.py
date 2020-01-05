@@ -9,5 +9,5 @@ class Item(models.Model):
     cost = models.DecimalField(max_digits=10, decimal_places=2)
     cost_type = models.CharField(max_length=10)
     remark = models.TextField()
-    date = models.DateField(auto_now=True)
+    date = models.DateField()
     username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
