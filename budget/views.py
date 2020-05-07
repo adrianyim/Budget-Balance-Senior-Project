@@ -1,20 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q, F
 from django.contrib import messages
-import datetime 
+from django.views.generic import FormView
+from rest_framework.views import APIView
+from rest_framework.response import Response 
 from sqlalchemy import create_engine
-from .forms import ItemForm, DayFrom
+from .mixins import AjaxFormMixin
+from .forms import ItemForm, DayForm
 from .models import Item
 from . import connectpsql
 import pandas as pd
 import numpy as np
+import datetime
+import matplotlib.pyplot as plt
 from numpy import exp, array, random, dot
 from sklearn.preprocessing import MinMaxScaler, scale
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
@@ -25,109 +30,65 @@ from statsmodels.graphics.tsaplots import plot_pacf
 from pmdarima.arima.utils import ndiffs
 from TFANN import ANNR
 from pandas.plotting import autocorrelation_plot
-import matplotlib.pyplot as plt
 from flask import Flask, render_template
-
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 # app = Flask(__name__)
 
-# Point to CustomUser table
+# point to CustomUser table
 User = get_user_model()
 
-# Create your views here.
-class Perceptron(object):
-    # Implements a perceptron network
-    def __init__(self, input_size, lr=1, epochs=100):
-        self.W = np.zeros(input_size+1)
-        # add one for bias
-        self.epochs = epochs
-        self.lr = lr
-    
-    def activation_fn(self, x):
-        return 1 if x >= 0 else 0
-
-    def predict(self, x):
-        z = self.W.T.dot(x)
-        a = self.activation_fn(z)
-        return a
-
-    def fit(self, X, d):
-        for _ in range(self.epochs):
-            for i in range(d.shape[0]):
-                x = np.insert(X[i], 0, 1)
-                y = self.predict(x)
-                e = d[i] - y
-                self.W = self.W + self.lr * e * x
-
-class NeuronNetwork(object):
-    def __init__(self):
-        random.seed(1)
-        
-        self.synaptic_weights = 2 * random.random() - 1
-
-    def _sigmoid(self, x):
-        return 1 / (1 + exp(-x))
-
-    def _sigmoid_derivative(self, x):
-        return x * (1 - x)
-
-    def learning(self, inputs):
-        return self._sigmoid(dot(inputs, self.synaptic_weights))
-
-    def train(self, inputs, outputs, training_iterations):
-        for iteration in range(training_iterations):
-            output = self.learning(inputs)
-
-            error = outputs - output
-
-            adjustment = dot(inputs, error * self._sigmoid_derivative(output))
-
-            self.synaptic_weights += adjustment
-
+# fill up the empty rows with zero 
 def insertZero(costList):
-    ## Daily total
+    # daily total
     dfDay = costList.cost.resample('D').sum()
 
     today = datetime.datetime.today() #yyyy-mm-dd
-    last_date = dfDay.iloc[[-1]].index # Find the last date of dfDay
+    last_date = dfDay.iloc[[-1]].index # find the last date of dfDay
     
+    # add zero until today
     while last_date < today - datetime.timedelta(days=1):
-        last_date += datetime.timedelta(days=1) # Add 1 day
-        new_row = pd.Series(data={" ": 0}, index=last_date) # Create a new row
-        dfDay = dfDay.append(new_row, ignore_index=False) # Insert into dfDay
+        last_date += datetime.timedelta(days=1) # add 1 day
+        new_row = pd.Series(data={" ": 0}, index=last_date) # create a new row
+        dfDay = dfDay.append(new_row, ignore_index=False) # insert into dfDay
 
     dfDay = dfDay.replace(to_replace=np.nan, value=0)
 
     return round(dfDay, 2)
 
+# predicting
 def processPrediction(dfDay, history, prediction_days):
     last_date = dfDay.iloc[[-1]].index + datetime.timedelta(days=1)
 
-    # orginal days list
-    dfDays = pd.DataFrame(columns=["date", "cost"])
-    dfDays.date = dfDay.index
-    dfDays.cost = dfDay.tolist()
-    dfDays.set_index("date", inplace=True)
+    ## orginal days list
+    dfOrginal = pd.DataFrame(columns=["date", "cost"])
+    # dfOrginal = pd.DataFrame(columns=["cost"])
+    dfOrginal.date = dfDay.index
+    dfOrginal.cost = dfDay.tolist()
+    # dfOrginal.set_index("date", inplace=True)
 
-    # predict days list
+    ## predict days list
     dfPredict = pd.DataFrame(columns=["date", "cost"])
     dfPredict.date = pd.date_range(last_date[0], periods=prediction_days, freq="D")
     dfPredict.cost = history[-prediction_days:]
-    dfPredict.set_index("date", inplace=True)
+    # dfPredict.set_index("date", inplace=True)
 
-    # Combine two data lists
-    dfDays = dfDays.append(dfPredict)
+    ## Combine two data lists
+    # dfOrginal = dfOrginal.append(dfPredict)
 
-    # plt.plot(dfDays.index, dfDays)
+    # plt.plot(dfOrginal.index, dfOrginal)
     # plt.show( )
     
-    return dfDays, dfPredict
+    return dfOrginal, dfPredict
 
+# inverse the difference in the dataset
 def inverse_diffference(history, predict, interval=1):
     # print(predict, " + ", history[-interval])
     return predict + history[-interval]
 
-def difference(df, interval=1):
+# find the difference in the dataset
+def difference(df):
     diff_list = []
+    interval = 1
 
     for i in range(interval, len(df)):
         value = df[i] - df[i - interval]
@@ -137,6 +98,7 @@ def difference(df, interval=1):
 
     return array(diff_list)
 
+# convert to number
 def convertToNum(df):
     df = df.replace(to_replace="Income", value=0)
     df = df.replace(to_replace="Expense", value=1)
@@ -151,6 +113,7 @@ def convertToNum(df):
 
     return df
 
+# processing data from psql
 def processingDataset(dataset, predict_type):
     pd.set_option('display.max_rows', None)
 
@@ -199,6 +162,7 @@ def processingDataset(dataset, predict_type):
     # dfMonth = pd.merge(dfMonth, dfWeekDay, how="outer", on="date", sort=True)
     # dfMonth = dfMonth.replace(to_replace=np.nan, value=-1)
 
+# predict function
 def predict(days, predict_type):
     # Connect to psql server
     engine = create_engine(connectpsql.psql)
@@ -207,61 +171,20 @@ def predict(days, predict_type):
     # Read dataset from psql server
     dataset = pd.read_sql(sql_command, engine, parse_dates=["date"])
     
+    # Processing data according to predict type
     dfDay = processingDataset(dataset, predict_type)
-
-    # autocorrelation_plot(expensesList)
-    # plt.show()
-
-    # plt.scatter(expensesList.index, expensesList.cost)
-    # plt.scatter(df.date, df.cost, c=0.5)
-
-    # plt.plot(dfDay.index, dfDay, "b-")
-    # plt.xlabel("Date")
-    # plt.ylabel("cost", color="b")
-    # plt.show()
-
-    # ##------------------------------------------------------------------##
-    ## Plot residual errors
-    # residuls = pd.DataFrame(model_fit.resid)
-    # residuls.plot(kind="kde")
-    # plt.show()
-    # print(residuls.describe())
-
-    # totalweek = len(dfDay)
-    # lastweek = 1
-    # pastweek = totalweek - lastweek
-    # train, test = dfDay[0:pastweek], dfDay[pastweek:totalweek]
-    # # train, test= train_test_split(dfDay, test_size = 0.1)
-
-    # history = [x for x in train]
-    # predictions_list = []
 
     # 5, 1, 0 > 188.426 497.815 (630.170)
     # 5, 0, 1 > 1.549   445.254 564.480
     # 6, 0, 1 > 1.671   438.906 561.012
     # 7, 0, 1 > 1.819   448.877
 
-    # for i in range(len(test)):
-    #     model = ARIMA(history, order=(6, 0, 1))
-    #     model_fit = model.fit(disp=0)
-    #     target = model_fit.forecast()
-    #     predictions_list.append(target[0])
-    #     history.append(test[i])
-    #     print("predicted=%f, actual=%f" % (target[0], test[i]))
-
-    # error = mean_squared_error(test, predictions_list)
-    # print("Test MSE: %.3f" % error)
-
-    # plt.plot(test, label="Actuals")
-    # plt.plot(predictions_list, label="forecast", color="red")
-    # plt.show()
-
     days_in_month = 31      # Comparing x days difference
     prediction_days = 14    # Predicting days
 
     diff_list = difference(dfDay, days_in_month)
 
-    model = ARIMA(diff_list, order=(8, 0, 1))
+    model = ARIMA(diff_list, order=(4, 1, 1))
     model_fit = model.fit(disp=0)
 
     # start_index = len(diff_list)
@@ -279,18 +202,21 @@ def predict(days, predict_type):
             inverted = 0.0
         history.append(round(inverted, 2))
 
-    dfDays, dfPredict = processPrediction(dfDay, history, days)
+    # find the prediction of how many days
+    dfOrginal, dfPredict = processPrediction(dfDay, history, days)
 
     # convert to html form
     predict_html = dfPredict.to_html(header=False, index_names=False, border=0, classes="predictTable")
 
-    return predict_html
+    return predict_html, dfOrginal, dfPredict
     # return render(request, "home.html", {"predict_list": predict_html})
 
+# delete item
 def deleteItems(request, id):
     Item.objects.filter(id = id).delete()
     return redirect("/home/")
 
+# update item
 def updateItems(request, id):
     item = Item.objects.get(id=id)
 
@@ -334,6 +260,7 @@ def updateItems(request, id):
     #         "item":item
     #     })
 
+# insert item
 def insertItems(request):
     if request.method == "POST":
         insertForm = ItemForm(request.POST)
@@ -358,6 +285,7 @@ def insertItems(request):
 
     return redirect("/home/")
 
+# calculate income/expense total
 def calculateToTal(request):
     username = Q(username=request.user)
 
@@ -369,26 +297,34 @@ def calculateToTal(request):
 
     return income, expense
 
+# main function
 def home(request):
     if request.user.is_authenticated:
         items = Item.objects.filter(username = request.user).order_by("-date") # order by date
         itemForm = ItemForm()
-        dayForm = DayFrom()
+        dayForm = DayForm()
         
         income, expense = calculateToTal(request)
         predict_list = ""
 
         # prediction post request form
-        if request.method == "POST":
-            form = DayFrom(request.POST)
-            if form.is_valid():
-                predict_type = form.cleaned_data["predict_type"]
-                days = form.cleaned_data["days"]
-                
-                if days == 0:
-                    return redirect("/home/")
-                else:
-                    predict_list = predict(days, predict_type)
+        # if request.method == "POST":
+        #     form = DayForm(request.POST)
+            
+        #     if form.is_valid():
+        #         predict_type = form.cleaned_data["predict_type"]
+        #         days = form.cleaned_data["days"]
+        #         print(predict_type)
+        #         print(days)
+        #         if days == 0:
+        #             return redirect("/home/")
+        #         else:
+        #             predict_list, dfOrginal, dfPredict = predict(days, predict_type)
+
+        #             # plt.plot(dfOrginal.index, dfOrginal, "b-")
+        #             # plt.xlabel("Date")
+        #             # plt.ylabel("Cost", color="b")
+        #             # plt.show()
 
         return render(request, "home.html", {
             "items": items, 
@@ -401,4 +337,58 @@ def home(request):
     else:
         return redirect("/user/login/")
 
+class DayFormView(AjaxFormMixin, FormView):
+    form_class = DayForm
+    template_name = "testing.html"
+    success_url = "/form-success/"
+
+def testing_data(request):
+    if request.method == "POST":
+        form = DayForm(request.POST)
+        # serializer = DaySerializer(request.POST)
+
+        if form.is_valid():  
+            predict_type = form.cleaned_data['predict_type']
+            days = form.cleaned_data['days']
+
+            predict_list, dfOrginal, dfPredict = predict(days, predict_type)
+
+            dfOrginal.date = dfOrginal.date.dt.strftime('%Y-%m-%d')
+            dfPredict.date = dfPredict.date.dt.strftime('%Y-%m-%d')
+            
+            data = {
+                "predict": dfPredict.cost.to_json(orient="values"),
+                "predict_date": dfPredict.date.to_json(orient="values", date_format="iso"),
+                "orginal": dfOrginal.cost.to_json(orient="values"),
+                "orginal_date": dfOrginal.date.to_json(orient="values", date_format="iso"),
+            }
+            
+            return JsonResponse(data)
+        else:
+            return JsonResponse(form.errors)
+    else:
+        return render(request, "testing.html", {
+            "testing_data": "No post request!"
+            })
+
+# Django REST framework
+class PredictChart(AjaxFormMixin, APIView):
+    def post(self, request, format=None):
+        if request.method == 'POST':
+            form = DayForm(request.POST)
+
+            if form.is_valid():  
+                data = form.cleaned_data
+
+                # predict_list, dfOrginal, dfPredict = predict(days, predict_type)
+
+                # original = dfOrginal.cost
+                # date = dfOrginal.index
+
+                return Response(data)
+            else:
+                return Response({"Error": "Form failed"})
+        else:
+            return Response({"Error": "Request Post failed"})
+        
 # pg_ctl.exe start -D C:\Users\adrian\Apps\PostgreSQL\data

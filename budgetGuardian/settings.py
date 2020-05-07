@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'budget.apps.BudgetConfig',
     'user.apps.UserConfig',
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -85,17 +86,6 @@ DATABASES = {
     }
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'd2mn9q2264h8tc',
-#         'USER': 'qeojpixrqqtmud',
-#         'PASSWORD': 'a2fa0478a20e0647f640354c19807b4f47618d25247f1b728629d40c1efc7d1c',
-#         'HOST': 'ec2-174-129-255-57.compute-1.amazonaws.com'
-#     }
-# }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -132,12 +122,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-STATIC_ROOT = "/Projects/budgetGuardian/static/"
+STATIC_ROOT = "/Projects/budgetGuardian/templates/static/"
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, "static"),
 )
 
 LOGIN_REDIRECT_URL = '/home'

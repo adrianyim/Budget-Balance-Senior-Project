@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method='POST' class="day-form" data-url="/home/data/">
+        {{form.as_p}}
+        <button type='submit'>Submit</button>
+    </form>
+{% endblock content %}
+
+{% block jquery %}
+<script>
+    $(document).ready(function(){
+        var $form = $(".day-form")
+        $form.submit(function(event){
+            event.preventDefault()
+            var $data = $(this).serialize()
+            var $endpoint = $form.attr("data-url") || window.location.href
+
+            $.ajax({
+                method: "POST",
+                url: $endpoint,
+                data: $data,
+                success: handleFormSuccess,
+                error: handleFormError,
+            })
+
+            function handleFormSuccess(data, textStatus, jqXHR){
+                console.log(data)
+                console.log(textStatus)
+                console.log(jqXHR)
+                $form[0].reset(); // reset form data
+            }
+        
+            function handleFormError(jqXHR, textStatus, errorThrown){
+                console.log(jqXHR)
+                console.log(textStatus)
+                console.log(errorThrown)
+            }
+        })
+    })
+</script>
+{% endblock %}

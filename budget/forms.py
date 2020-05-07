@@ -1,5 +1,6 @@
 from django import forms
 from .models import Item
+from rest_framework import serializers
 
 class DateInput(forms.DateInput):
     input_type = "date"
@@ -33,9 +34,16 @@ class ItemForm(forms.ModelForm):
             "date": DateInput()
         }
 
-class DayFrom(forms.Form):
+class DayForm(forms.Form):
     predict_type = forms.ChoiceField(choices=[
         ("income", "Income"),
         ("expense", "Expense")
     ])
     days = forms.IntegerField(min_value=0)
+
+# class DaySerializer(serializers.Serializer):
+#     predict_type = serializers.ChoiceField(choices=[
+#         ("income", "Income"),
+#         ("expense", "Expense")
+#     ])
+#     days = serializers.IntegerField()
