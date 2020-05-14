@@ -86,9 +86,8 @@ def inverse_diffference(history, predict, interval=1):
     return predict + history[-interval]
 
 # find the difference in the dataset
-def difference(df):
+def difference(df, interval=1):
     diff_list = []
-    interval = 1
 
     for i in range(interval, len(df)):
         value = df[i] - df[i - interval]
@@ -298,6 +297,7 @@ def calculateToTal(request):
     return income, expense
 
 # main function
+# calls from url /home/
 def home(request):
     if request.user.is_authenticated:
         items = Item.objects.filter(username = request.user).order_by("-date") # order by date
@@ -337,15 +337,17 @@ def home(request):
     else:
         return redirect("/user/login/")
 
+# calls from url /home/data/
 class DayFormView(AjaxFormMixin, FormView):
     form_class = DayForm
     template_name = "testing.html"
     success_url = "/form-success/"
 
-def testing_data(request):
+# request to predict
+# calls from ural /home/dataset/
+def requestData(request):
     if request.method == "POST":
         form = DayForm(request.POST)
-        # serializer = DaySerializer(request.POST)
 
         if form.is_valid():  
             predict_type = form.cleaned_data['predict_type']
@@ -372,6 +374,7 @@ def testing_data(request):
             })
 
 # Django REST framework
+# calls from url /home/testing/chart/data
 class PredictChart(AjaxFormMixin, APIView):
     def post(self, request, format=None):
         if request.method == 'POST':
