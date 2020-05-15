@@ -20,6 +20,12 @@ Home
             <tr><td></td><td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
         </form>
             <tr><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td></tr>
+        <form method="POST" action="new_insertItems">
+            {% csrf_token %}
+            {{new_item_form}}
+            <tr><td></td><td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
+        </form>
+            <tr><td>Total new income: $ {{new_income}}</td><td>Total new expense: $ {{new_expense}}</td></tr>
             <tr><td colspan="2">How many days do you want to predict?</td></tr>
         <form method="POST" class="day-form" action='home'>
             {% csrf_token %}
@@ -35,6 +41,19 @@ Home
 </div>
 <div class="row justify-content-md-center mx-5 p-3 table-success">
     <table class="table-hover">
+        <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
+        {% for item in new_items %}
+        <tr>
+            <td>{{item.item}}</td>
+            <td>{{item.item_type}}</td>
+            <td>{{item.cost}}</td>
+            <td>{{item.cost_type}}</td>
+            <td>{{item.remark}}</td>
+            <td>{{item.date}}</td>
+            <td><a href="new_updateItems/{{item.id}}"><button type="button" class="btn btn-primary btn-sm">Update</button></a></td>
+            <td><a href="new_deleteItems/{{item.id}}"><button type="button" class="btn btn-outline-danger btn-sm">Delete</button></a></td>
+        </tr>
+        {% endfor %}
         <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
         {% for item in items %}
         <tr>

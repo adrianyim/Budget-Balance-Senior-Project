@@ -9,8 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response 
 from sqlalchemy import create_engine
 from .mixins import AjaxFormMixin
-from .forms import ItemForm, DayForm
-from .models import Item
+from .forms import Item_Form, Day_Form, New_Item_Form
+from .models import Item, New_item
 from . import connectpsql
 import pandas as pd
 import numpy as np
@@ -212,7 +212,11 @@ def predict(days, predict_type):
 
 # delete item
 def deleteItems(request, id):
-    Item.objects.filter(id = id).delete()
+    Item.objects.filter(id=id).delete()
+    return redirect("/home/")
+
+def new_deleteItems(request, id):
+    New_item.objects.filter(id=id).delete()
     return redirect("/home/")
 
 # update item
@@ -220,49 +224,45 @@ def updateItems(request, id):
     item = Item.objects.get(id=id)
 
     if request.method == "POST":
-        updateForm = ItemForm(request.POST, instance=item)
+        updateForm = Item_Form(request.POST, instance=item)
+
         if updateForm.is_valid():
             itemDB = updateForm.save(commit=False)
             itemDB.save()
 
         return redirect("/home/")
     else:
-        updateForm = ItemForm(instance=item)
+        updateForm = Item_Form(instance=item)
 
     return render(request, "updateItems.html", {
             "item":item,
             "updateForm":updateForm
         })
 
+def new_updateItems(request, id):
+    new_item = New_item.objects.get(id=id)
 
-    # if request.method == "POST":
-    #     item = request.POST["item"]
-    #     item_type = request.POST["item_type"]
-    #     cost = request.POST["cost"]
-    #     cost_type = request.POST["cost_type"]
-    #     remark = request.POST["remark"]
-    #     date = request.POST["date"]
+    if request.method == "POST":
+        new_updateForm = New_Item_Form(request.POST, instance=new_item)
 
-    #     Item.objects.filter(id = id).update(
-    #         item = item, 
-    #         item_type = item_type, 
-    #         cost = cost, 
-    #         cost_type = cost_type, 
-    #         remark = remark,
-    #         date = date)
+        if new_updateForm.is_valid():
+            itemDB = new_updateForm.save(commit=False)
+            itemDB.save()
 
-    #     return redirect("home")
-    # else:
-    #     item = get_object_or_404(Item, id=id)
+        return redirect("/home/")
+    else:
+        new_updateForm = New_Item_Form(instance=new_item)
 
-    #     return render(request, "updateItems.html", {
-    #         "item":item
-    #     })
+    return render(request, "new_updateItems.html", {
+            "new_item":new_item,
+            "new_updateForm":new_updateForm
+        })
 
 # insert item
 def insertItems(request):
     if request.method == "POST":
-        insertForm = ItemForm(request.POST)
+        insertForm = Item_Form(request.POST)
+
         if insertForm.is_valid():
             item = insertForm.cleaned_data["item"]
             item_type = insertForm.cleaned_data["item_type"]
@@ -272,6 +272,33 @@ def insertItems(request):
             date = insertForm.cleaned_data["date"]
 
             itemDB = Item(
+                id = New_item.objects.latest('id').id + 1,
+                item = item, 
+                item_type = item_type, 
+                cost = cost, 
+                cost_type = cost_type, 
+                remark = remark,
+                date = date,
+                username = User.objects.get(username = request.user))
+
+            itemDB.save()
+
+    return redirect("/home/")
+
+def new_insertItems(request):
+    if request.method == "POST":
+        new_insertForm = New_Item_Form(request.POST)
+
+        if new_insertForm.is_valid():
+            item = new_insertForm.cleaned_data["item"]
+            item_type = new_insertForm.cleaned_data["item_type"]
+            cost = new_insertForm.cleaned_data["cost"]
+            cost_type = new_insertForm.cleaned_data["cost_type"]
+            remark = new_insertForm.cleaned_data["remark"]
+            date = new_insertForm.cleaned_data["date"]
+
+            itemDB = New_item(
+                id = New_item.objects.latest('id').id + 1,
                 item = item, 
                 item_type = item_type, 
                 cost = cost, 
@@ -285,7 +312,7 @@ def insertItems(request):
     return redirect("/home/")
 
 # calculate income/expense total
-def calculateToTal(request):
+def calculate_total(request):
     username = Q(username=request.user)
 
     costtype = Q(cost_type="Expense")
@@ -296,50 +323,47 @@ def calculateToTal(request):
 
     return income, expense
 
+def new_calculate_total(request):
+    username = Q(username=request.user)
+
+    costtype = Q(cost_type="Expense")
+    new_expense = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+    
+    costtype = Q(cost_type="Income")
+    new_income = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+
+    return new_income, new_expense
+
 # main function
 # calls from url /home/
 def home(request):
     if request.user.is_authenticated:
-        items = Item.objects.filter(username = request.user).order_by("-date") # order by date
-        itemForm = ItemForm()
-        dayForm = DayForm()
+        # order by date
+        items = Item.objects.filter(username=request.user).order_by("-date")
+        new_items  = New_item.objects.filter(username=request.user).order_by("-date")
         
-        income, expense = calculateToTal(request)
+        income, expense = calculate_total(request)
+        new_income, new_expense = new_calculate_total(request)
         predict_list = ""
-
-        # prediction post request form
-        # if request.method == "POST":
-        #     form = DayForm(request.POST)
-            
-        #     if form.is_valid():
-        #         predict_type = form.cleaned_data["predict_type"]
-        #         days = form.cleaned_data["days"]
-        #         print(predict_type)
-        #         print(days)
-        #         if days == 0:
-        #             return redirect("/home/")
-        #         else:
-        #             predict_list, dfOrginal, dfPredict = predict(days, predict_type)
-
-        #             # plt.plot(dfOrginal.index, dfOrginal, "b-")
-        #             # plt.xlabel("Date")
-        #             # plt.ylabel("Cost", color="b")
-        #             # plt.show()
 
         return render(request, "home.html", {
             "items": items, 
+            "new_items": new_items,
             "expense": expense,
             "income": income,
+            "new_expense": new_expense,
+            "new_income": new_income,
             "predict_list": predict_list,
-            "item_form": itemForm,
-            "day_form": dayForm
+            "item_form": Item_Form(),
+            "day_form": Day_Form(),
+            "new_item_form": New_Item_Form()
             })
     else:
         return redirect("/user/login/")
 
 # calls from url /home/data/
 class DayFormView(AjaxFormMixin, FormView):
-    form_class = DayForm
+    form_class = Day_Form
     template_name = "testing.html"
     success_url = "/form-success/"
 
@@ -347,7 +371,7 @@ class DayFormView(AjaxFormMixin, FormView):
 # calls from ural /home/dataset/
 def requestData(request):
     if request.method == "POST":
-        form = DayForm(request.POST)
+        form = Day_Form(request.POST)
 
         if form.is_valid():  
             predict_type = form.cleaned_data['predict_type']
@@ -378,7 +402,7 @@ def requestData(request):
 class PredictChart(AjaxFormMixin, APIView):
     def post(self, request, format=None):
         if request.method == 'POST':
-            form = DayForm(request.POST)
+            form = Day_Form(request.POST)
 
             if form.is_valid():  
                 data = form.cleaned_data

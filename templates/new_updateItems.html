@@ -11,9 +11,9 @@ Update
 
 {% block content %}
 <table class="container">
-    <form method="POST" action="/home/updateItems/{{item.id}}" >
+    <form method="POST" action="/home/new_updateItems/{{new_item.id}}" >
         {% csrf_token %}
-        {{updateForm}}
+        {{new_updateForm}}
         <tr><td colspan="2"><button type="submit" class="btn btn-outline-info btn-sm">Update</button></td></tr>
     </form>    
     <td><a href="/home/"><button type="button" class="btn btn-outline-secondary btn-sm">Back</button></a></td> 
