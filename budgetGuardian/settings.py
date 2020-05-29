@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'budget.apps.BudgetConfig',
     'user.apps.UserConfig',
     "rest_framework",
+    "django_filters"
 ]
 
 MIDDLEWARE = [

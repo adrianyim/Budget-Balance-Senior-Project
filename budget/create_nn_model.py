@@ -67,7 +67,7 @@ def convert_to_num(df):
 
 # connect psql server to get the dataset
 engine = create_engine(connectpsql.psql)
-sql_command = 'SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date'
+sql_command = 'SELECT date, item_type, cost_type, cost FROM budget_new_item ORDER BY date'
 dataset = pd.read_sql(sql_command, engine, parse_dates=['date'])
 
 dataset = convert_to_num(dataset)
@@ -130,7 +130,7 @@ model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
 # train the model
 # model.fit(x_train_income, y_train_income, batch_size=1, epochs=5)
-# model.fit(x_train_expense, y_train_expense, batch_size=1, epochs=5)
+model.fit(x_train_expense, y_train_expense, batch_size=1, epochs=5)
 
 # testing data set
 income_testing_set = scaled_income[income_training_len - DAY:]

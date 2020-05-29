@@ -12,6 +12,7 @@ from .mixins import AjaxFormMixin
 from .forms import Item_Form, Day_Form, New_Item_Form
 from .models import Item, New_item
 from . import connectpsql
+from .filters import ItemFilters
 import pandas as pd
 import numpy as np
 import datetime
@@ -165,7 +166,7 @@ def processingDataset(dataset, predict_type):
 def predict(days, predict_type):
     # Connect to psql server
     engine = create_engine(connectpsql.psql)
-    sql_command = "SELECT date, item_type, cost_type, cost FROM budget_item ORDER BY date"
+    sql_command = "SELECT date, item_type, cost_type, cost FROM budget_new_item ORDER BY date"
 
     # Read dataset from psql server
     dataset = pd.read_sql(sql_command, engine, parse_dates=["date"])
@@ -323,14 +324,22 @@ def calculate_total(request):
 
     return income, expense
 
-def new_calculate_total(request):
+def new_calculate_total(request, new_items):
     username = Q(username=request.user)
-
     costtype = Q(cost_type="Expense")
-    new_expense = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
-    
+
+    # new_expense = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+    new_expense = new_items.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+
+    if str(new_expense) == 'None':
+        new_expense = 0
+
     costtype = Q(cost_type="Income")
-    new_income = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+    # new_income = New_item.objects.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+    new_income = new_items.filter(username, costtype).aggregate(total_sum=Sum("cost"))["total_sum"]
+
+    if str(new_income) == 'None':
+        new_income = 0
 
     return new_income, new_expense
 
@@ -340,10 +349,15 @@ def home(request):
     if request.user.is_authenticated:
         # order by date
         items = Item.objects.filter(username=request.user).order_by("-date")
-        new_items  = New_item.objects.filter(username=request.user).order_by("-date")
-        
+        new_items = New_item.objects.filter(username=request.user).order_by("-date")
+
+        # filter the items
+        myFilter = ItemFilters(request.POST, queryset=new_items)
+        new_items = myFilter.qs
+    
+        # calculate the total income and expense
         income, expense = calculate_total(request)
-        new_income, new_expense = new_calculate_total(request)
+        new_income, new_expense = new_calculate_total(request, new_items)
         predict_list = ""
 
         return render(request, "home.html", {
@@ -356,7 +370,8 @@ def home(request):
             "predict_list": predict_list,
             "item_form": Item_Form(),
             "day_form": Day_Form(),
-            "new_item_form": New_Item_Form()
+            "new_item_form": New_Item_Form(),
+            "myFilter": myFilter
             })
     else:
         return redirect("/user/login/")
@@ -368,7 +383,7 @@ class DayFormView(AjaxFormMixin, FormView):
     success_url = "/form-success/"
 
 # request to predict
-# calls from ural /home/dataset/
+# calls from url /home/dataset/
 def requestData(request):
     if request.method == "POST":
         form = Day_Form(request.POST)

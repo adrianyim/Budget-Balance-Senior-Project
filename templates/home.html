@@ -14,18 +14,17 @@ Home
 {% block content %}
 <div class="row justify-content-md-center mx-5">
     <table id="table-item" class="table table-borderless" style="text-align: center">
-        <form method="POST" action="insertItems">
+        <!-- <form method="POST" action="insertItems">
             {% csrf_token %}
             {{item_form}}
             <tr><td></td><td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
         </form>
-            <tr><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td></tr>
+            <tr><td>Total income: $ {{income}}</td><td>Total expense: $ {{expense}}</td></tr> -->
         <form method="POST" action="new_insertItems">
             {% csrf_token %}
             {{new_item_form}}
             <tr><td></td><td><button type="submit" class="btn btn-outline-info btn-sm">Submit</button></td></tr>
         </form>
-            <tr><td>Total new income: $ {{new_income}}</td><td>Total new expense: $ {{new_expense}}</td></tr>
             <tr><td colspan="2">How many days do you want to predict?</td></tr>
         <form method="POST" class="day-form" action='home'>
             {% csrf_token %}
@@ -41,6 +40,13 @@ Home
 </div>
 <div class="row justify-content-md-center mx-5 p-3 table-success">
     <table class="table-hover">
+        <tr><form method="POST">
+            {% csrf_token %}
+            <td>{{myFilter.form}}</td>
+            <td><button type="submit" class="btn btn-warning btn-sm">Filter</button></td>
+        </form>
+        </tr>
+        <tr><td colspan="3">Total income: $ {{new_income}}</td><td colspan="3">Total expense: $ {{new_expense}}</td></tr>
         <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
         {% for item in new_items %}
         <tr>
@@ -54,7 +60,7 @@ Home
             <td><a href="new_deleteItems/{{item.id}}"><button type="button" class="btn btn-outline-danger btn-sm">Delete</button></a></td>
         </tr>
         {% endfor %}
-        <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
+        <!-- <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
         {% for item in items %}
         <tr>
             <td>{{item.item}}</td>
@@ -66,7 +72,7 @@ Home
             <td><a href="updateItems/{{item.id}}"><button type="button" class="btn btn-primary btn-sm">Update</button></a></td>
             <td><a href="deleteItems/{{item.id}}"><button type="button" class="btn btn-outline-danger btn-sm">Delete</button></a></td>
         </tr>
-        {% endfor %}
+        {% endfor %} -->
     </table>
 </div>
 {% endblock %}

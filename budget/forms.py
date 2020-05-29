@@ -59,6 +59,7 @@ class New_Item_Form(forms.ModelForm):
             ('Insurance', 'Insurance'),
             ('Medical/Healthcare', 'Medical/Healthcare'),
             ('Donations', 'Donations'),
+            ("Finance Costs", "Finance Costs"),
             ('Others', 'Others')
             ]
         costType_Choices = [
