@@ -36,17 +36,17 @@ Home
     {% autoescape off %}{{predict_list}}{% endautoescape %}
 </div>
 <div class="row justify-content-md-center mx-5">
-    <canvas id="showChart" width="100%" height="100%"></canvas>
+    <canvas id="showChart" width="100%" height="45%"></canvas>
 </div>
 <div class="row justify-content-md-center mx-5 p-3 table-success">
     <table class="table-hover">
         <tr><form method="POST">
             {% csrf_token %}
-            <td>{{myFilter.form}}</td>
+            {{myFilter.form}}
             <td><button type="submit" class="btn btn-warning btn-sm">Filter</button></td>
         </form>
         </tr>
-        <tr><td colspan="3">Total income: $ {{new_income}}</td><td colspan="3">Total expense: $ {{new_expense}}</td></tr>
+        <tr><th colspan="3">Total income: $ {{new_income}}</th><th colspan="3">Total expense: $ {{new_expense}}</th></tr>
         <tr><th>Item</th><th>Item Type</th><th>Cost</th><th>Cost Type</th><th>Remark</th><th>Date</th></tr>
         {% for item in new_items %}
         <tr>
@@ -96,15 +96,14 @@ Home
             })
 
             function handleFormSuccess(data, textStatus, jqXHR){
-                //console.log(data)
-                //console.log(textStatus)
-                //console.log(jqXHR)
                 form[0].reset(); // reset form data
 
-                //// Convert data to Json
-                //predict_data = data.predict.match(/\d+(?:\.\d+)?/g).map(Number)
+                // convert data to Json
+                // predicted data
                 predict_data = JSON.parse(data.predict)
                 predict_date_label = JSON.parse(data.predict_date)
+
+                // orginal data
                 orginal_data = JSON.parse(data.orginal)
                 orginal_date_label = JSON.parse(data.orginal_date)
 

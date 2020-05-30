@@ -50,6 +50,7 @@ class New_Item_Form(forms.ModelForm):
         fields = ["item", "item_type", "cost", "cost_type", "remark", "date"]
         itemType_Choices = [
             ('', '--Item Type--'),
+            ('Salary', 'Salary'),
             ('Housing', 'Housing'),
             ('Transportation', 'Transportation'),
             ('Utilities', 'Utilities'),

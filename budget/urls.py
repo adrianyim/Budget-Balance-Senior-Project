@@ -12,5 +12,5 @@ urlpatterns = [
     path("new_deleteItems/<id>", views.new_deleteItems, name="new_deleteItems"),
     path("testing/chart/data", views.PredictChart.as_view(), name="testingData"),
     path("dataset/", views.requestData, name="requestData"),
-    path("data/", views.DayFormView.as_view(), name="dayformview")
+    # path("data/", views.DayFormView.as_view(), name="dayformview")
 ]

@@ -33,7 +33,6 @@ from TFANN import ANNR
 from pandas.plotting import autocorrelation_plot
 from flask import Flask, render_template
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-# app = Flask(__name__)
 
 # point to CustomUser table
 User = get_user_model()
@@ -162,11 +161,11 @@ def processingDataset(dataset, predict_type):
     # dfMonth = pd.merge(dfMonth, dfWeekDay, how="outer", on="date", sort=True)
     # dfMonth = dfMonth.replace(to_replace=np.nan, value=-1)
 
-# predict function
-def predict(days, predict_type):
+# prediction function
+def prediction(days, predict_type, username):
     # Connect to psql server
     engine = create_engine(connectpsql.psql)
-    sql_command = "SELECT date, item_type, cost_type, cost FROM budget_new_item ORDER BY date"
+    sql_command = "SELECT date, item_type, cost_type, cost FROM budget_new_item i INNER JOIN user_customuser u ON i.username_id = u.id WHERE u.username = '" + str(username) + "' ORDER BY i.date"
 
     # Read dataset from psql server
     dataset = pd.read_sql(sql_command, engine, parse_dates=["date"])
@@ -224,7 +223,7 @@ def new_deleteItems(request, id):
 def updateItems(request, id):
     item = Item.objects.get(id=id)
 
-    if request.method == "POST":
+    if request.POST:
         updateForm = Item_Form(request.POST, instance=item)
 
         if updateForm.is_valid():
@@ -243,7 +242,7 @@ def updateItems(request, id):
 def new_updateItems(request, id):
     new_item = New_item.objects.get(id=id)
 
-    if request.method == "POST":
+    if request.POST:
         new_updateForm = New_Item_Form(request.POST, instance=new_item)
 
         if new_updateForm.is_valid():
@@ -261,7 +260,7 @@ def new_updateItems(request, id):
 
 # insert item
 def insertItems(request):
-    if request.method == "POST":
+    if request.POST:
         insertForm = Item_Form(request.POST)
 
         if insertForm.is_valid():
@@ -287,7 +286,7 @@ def insertItems(request):
     return redirect("/home/")
 
 def new_insertItems(request):
-    if request.method == "POST":
+    if request.POST:
         new_insertForm = New_Item_Form(request.POST)
 
         if new_insertForm.is_valid():
@@ -344,9 +343,10 @@ def new_calculate_total(request, new_items):
     return new_income, new_expense
 
 # main function
-# calls from url /home/
+# call from url /home/
 def home(request):
     if request.user.is_authenticated:
+
         # order by date
         items = Item.objects.filter(username=request.user).order_by("-date")
         new_items = New_item.objects.filter(username=request.user).order_by("-date")
@@ -376,24 +376,20 @@ def home(request):
     else:
         return redirect("/user/login/")
 
-# calls from url /home/data/
-class DayFormView(AjaxFormMixin, FormView):
-    form_class = Day_Form
-    template_name = "testing.html"
-    success_url = "/form-success/"
-
 # request to predict
-# calls from url /home/dataset/
+# call from url /home/dataset/
 def requestData(request):
-    if request.method == "POST":
+    if request.POST:
         form = Day_Form(request.POST)
 
         if form.is_valid():  
             predict_type = form.cleaned_data['predict_type']
             days = form.cleaned_data['days']
 
-            predict_list, dfOrginal, dfPredict = predict(days, predict_type)
+            # call prediction function to predict
+            predict_list, dfOrginal, dfPredict = prediction(days, predict_type, request.user)
 
+            # reformat the date
             dfOrginal.date = dfOrginal.date.dt.strftime('%Y-%m-%d')
             dfPredict.date = dfPredict.date.dt.strftime('%Y-%m-%d')
             
@@ -408,12 +404,12 @@ def requestData(request):
         else:
             return JsonResponse(form.errors)
     else:
-        return render(request, "testing.html", {
-            "testing_data": "No post request!"
+        return render(request, "dataset_request.html", {
+            "data_response": "No post request!"
             })
 
 # Django REST framework
-# calls from url /home/testing/chart/data
+# call from url /home/testing/chart/data
 class PredictChart(AjaxFormMixin, APIView):
     def post(self, request, format=None):
         if request.method == 'POST':
@@ -432,5 +428,11 @@ class PredictChart(AjaxFormMixin, APIView):
                 return Response({"Error": "Form failed"})
         else:
             return Response({"Error": "Request Post failed"})
-        
+
+# call from url /home/data/
+class DayFormView(AjaxFormMixin, FormView):
+    form_class = Day_Form
+    template_name = "dataset_request.html"
+    success_url = "/form-success/"
+
 # pg_ctl.exe start -D C:\Users\adrian\Apps\PostgreSQL\data
