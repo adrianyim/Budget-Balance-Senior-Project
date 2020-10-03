@@ -387,20 +387,21 @@ def requestData(request):
             days = form.cleaned_data['days']
 
             # call prediction function to predict
-            predict_list, dfOrginal, dfPredict = prediction(days, predict_type, request.user)
+            # predict_list, dfOrginal, dfPredict = prediction(days, predict_type, request.user)
 
             # reformat the date
-            dfOrginal.date = dfOrginal.date.dt.strftime('%Y-%m-%d')
-            dfPredict.date = dfPredict.date.dt.strftime('%Y-%m-%d')
+            # dfOrginal.date = dfOrginal.date.dt.strftime('%Y-%m-%d')
+            # dfPredict.date = dfPredict.date.dt.strftime('%Y-%m-%d')
             
-            data = {
-                "predict": dfPredict.cost.to_json(orient="values"),
-                "predict_date": dfPredict.date.to_json(orient="values", date_format="iso"),
-                "orginal": dfOrginal.cost.to_json(orient="values"),
-                "orginal_date": dfOrginal.date.to_json(orient="values", date_format="iso"),
-            }
+            # data = {
+            #     "predict": dfPredict.cost.to_json(orient="values"),
+            #     "predict_date": dfPredict.date.to_json(orient="values", date_format="iso"),
+            #     "orginal": dfOrginal.cost.to_json(orient="values"),
+            #     "orginal_date": dfOrginal.date.to_json(orient="values", date_format="iso"),
+            # }
             
-            return JsonResponse(data)
+            # return JsonResponse(data)
+            return "Hello"
         else:
             return JsonResponse(form.errors)
     else:
