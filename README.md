@@ -1,4 +1,4 @@
-Menior Project
+Senior Project
 ---
 This uses Python languages, Django frameworks, and demonstrates competence in ?.
 
