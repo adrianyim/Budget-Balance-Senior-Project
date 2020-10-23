@@ -1,4 +1,4 @@
-# Senior Project - Budget Balance
+# Budget Balance (Senior Project)
 ---
 Description
 ---
